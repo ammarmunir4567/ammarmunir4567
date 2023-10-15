@@ -9,7 +9,7 @@
 
 - 🌱 I’m currently learning **MERN**
 
-- 👨‍💻 All of my projects are available at [Github Repositories](Github Repositories)
+- 👨‍💻 All of my projects are available at [Github Repositories]
 
 - 📫 How to reach me **ammarmunir4567@gmail.com**
 
