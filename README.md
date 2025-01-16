@@ -7,7 +7,7 @@
 
 - 🔭 I’m currently working on **Web Development**
 
-- 🌱 I’m currently learning **Django**
+- 🌱 I’m currently learning **Django**, **Next.js**, and **LangChain**
 
 - 👨‍💻 All of my projects are available at [Github Repositories]
 
