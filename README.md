@@ -30,6 +30,18 @@
   <img src="https://github-readme-stats.vercel.app/api?username=anuraghazra&show_icons=true" />
 </picture>
 
-<p>&nbsp;<img align="center" src="https://github-readme-stats.vercel.app/api?username=ammarmunir4567&show_icons=true&locale=en" alt="ammarmunir4567" /></p>
+<picture>
+  <source
+    srcset="https://github-readme-stats.vercel.app/api/top-langs/?username=anuraghazra&layout=pie"
+    media="(prefers-color-scheme: dark)"
+  />
+  <source
+    srcset="https://github-readme-stats.vercel.app/api?username=ammarmunir4567&show_icons=true"
+    media="(prefers-color-scheme: light), (prefers-color-scheme: no-preference)"
+  />
+  <img src="https://github.com/ammarmunir4567/github-readme-stats" />
+</picture>
+
+
 
 <p><img align="center" src="https://github-readme-streak-stats.herokuapp.com/?user=ammarmunir4567&" alt="ammarmunir4567" /></p>
