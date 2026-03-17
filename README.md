@@ -1,13 +1,12 @@
-<h1 align="center">Hi 👋, I'm Ammar Munir</h1>
-<h3 align="center">🚀 A passionate Full Stack Developer from Pakistan</h3>
+<h1 align="center">Hi , I'm Ammar Munir</h1>
+<h3 align="center"> A passionate Full Stack Developer from Pakistan</h3>
 
 
 ---
 
 - 🔭 I’m currently working on **Gen AI**
-- 🌱 I’m currently learning **LangChain**
 - 💬 Ask me about **Full Stack Development | AI Integration | Cloud Solutions**
-- ⚡ Fun fact: *I debug my dreams in Python*
+
 
 ---
 
