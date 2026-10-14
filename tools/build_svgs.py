@@ -32,12 +32,12 @@ PALETTES = {
     "light": dict(
         bg="#F5F7FC", panel="#FFFFFF", rule="#D9E0F0", ink="#141A33", muted="#56607F",
         cobalt="#2342A6", turq="#0E7C7B", saffron="#B86E0A", mist="#C3CDE8", band="#2342A6",
-        bandAccent="#0E7C7B", ring="#0E7C7B",
+        bandAccent="#0E7C7B", ring="#0E7C7B", onCobalt="#FFFFFF", turqTint="#E3F4F3",
     ),
     "dark": dict(
         bg="#0F1430", panel="#161D42", rule="#2A3466", ink="#E8ECF8", muted="#9AA5CC",
         cobalt="#8FA8FF", turq="#3FD0C9", saffron="#F2B04A", mist="#3A4578", band="#5B7BEA",
-        bandAccent="#3FD0C9", ring="#3FD0C9",
+        bandAccent="#3FD0C9", ring="#3FD0C9", onCobalt="#0F1430", turqTint="#123A4A",
     ),
 }
 
@@ -353,6 +353,81 @@ def timeline(theme):
 </svg>'''
 
 
+# ---------------------------------------------------------------- Ask Arq architecture
+
+def architecture(theme):
+    p = PALETTES[theme]
+    s = Svg()
+    W = 880
+    els = []
+
+    def node(x, y, w, h, title, sub=None, kind="step"):
+        if kind == "io":
+            els.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{h / 2}" fill="{p["cobalt"]}"/>')
+            tc, sc = p["onCobalt"], p["onCobalt"]
+        elif kind == "mem":
+            els.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="10" fill="{p["turqTint"]}" stroke="{p["turq"]}" stroke-width="1.5"/>')
+            tc, sc = p["ink"], p["muted"]
+        else:
+            els.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="10" fill="{p["panel"]}" stroke="{p["cobalt"]}" stroke-width="1.5"/>')
+            tc, sc = p["ink"], p["muted"]
+        cx = x + w / 2
+        if sub:
+            els.append(s.text(cx, y + h / 2 - 3, title, "sansb", 14.5, tc, anchor="middle"))
+            els.append(s.text(cx, y + h / 2 + 15, sub, "sans", 12.5, sc, anchor="middle"))
+        else:
+            els.append(s.text(cx, y + h / 2 + 5, title, "sansb", 14.5, tc, anchor="middle"))
+        return dict(l=x, r=x + w, t=y, b=y + h, cx=cx, cy=y + h / 2)
+
+    def arrow(d, both=False):
+        start = ' marker-start="url(#ah)"' if both else ""
+        els.append(f'<path d="{d}" fill="none" stroke="{p["muted"]}" stroke-width="1.5"{start} marker-end="url(#ah)"/>')
+
+    # row 1: question, router, agent, memory
+    h1, y1 = 56, 14
+    q = node(16, y1, 126, h1, "Question", kind="io")
+    r = node(194, y1, 140, h1, "LLM router")
+    a = node(386, y1, 176, h1, "ReAct agent", "about 13 tools")
+    m = node(632, y1, 190, h1, "Mem0", "persistent memory", kind="mem")
+    arrow(f"M{q['r'] + 2} {q['cy']}H{r['l'] - 4}")
+    arrow(f"M{r['r'] + 2} {r['cy']}H{a['l'] - 4}")
+    arrow(f"M{a['r'] + 6} {a['cy']}H{m['l'] - 6}", both=True)
+
+    # row 2: expansion, then the retrieval box, then the answer
+    box_t, box_b, box_l, box_r = 128, 318, 188, 712
+    els.append(f'<rect x="{box_l}" y="{box_t}" width="{box_r - box_l}" height="{box_b - box_t}" rx="14" '
+               f'fill="none" stroke="{p["turq"]}" stroke-width="1.5" stroke-dasharray="5 5"/>')
+    els.append(s.text(box_l + 18, box_t + 26, "Hybrid retrieval, isolated per organization", "sansb", 13, p["turq"]))
+    h2 = 52
+    mid = 242
+    x_ = node(16, mid - h2 / 2, 140, h2, "Multi-query", "expansion")
+    d = node(214, mid - 36 - 22, 132, 44, "Dense search")
+    sp = node(214, mid + 36 - 22, 132, 44, "Sparse search")
+    f = node(392, mid - h2 / 2, 136, h2, "Reciprocal", "rank fusion")
+    c = node(560, mid - h2 / 2, 130, h2, "Cross-encoder", "rerank")
+    ans = node(738, mid - h2 / 2, 126, h2, "Cited answer", kind="io")
+
+    # agent hands the query to retrieval
+    arrow(f"M{a['cx']} {a['b'] + 2}V96H{x_['cx']}V{x_['t'] - 4}")
+    split = x_["r"] + 26
+    for n in (d, sp):
+        arrow(f"M{x_['r'] + 2} {x_['cy']}H{split}V{n['cy']}H{n['l'] - 4}")
+    join = d["r"] + 22
+    for n in (d, sp):
+        arrow(f"M{n['r'] + 2} {n['cy']}H{join}V{f['cy']}H{f['l'] - 4}")
+    arrow(f"M{f['r'] + 2} {f['cy']}H{c['l'] - 4}")
+    arrow(f"M{c['r'] + 2} {c['cy']}H{ans['l'] - 4}")
+
+    H = box_b + 8
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-labelledby="t d">
+<title id="t">Ask Arq architecture</title>
+<desc id="d">A question goes to an LLM router, then a ReAct agent with about 13 tools that reads and writes Mem0 persistent memory. The agent expands the question into multiple queries. Hybrid retrieval, isolated per organization, runs dense and sparse search, fuses the results with reciprocal rank fusion and reranks them with a cross-encoder, producing a cited answer.</desc>
+<style>{s.fonts_css()}</style>
+<defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="{p["muted"]}"/></marker></defs>
+{"".join(els)}
+</svg>'''
+
+
 def band(theme):
     p = PALETTES[theme]
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="880" height="26" viewBox="0 0 880 26" aria-hidden="true">'
@@ -361,6 +436,7 @@ def band(theme):
 
 for theme in PALETTES:
     (OUT / f"band-{theme}.svg").write_text(band(theme))
+    (OUT / f"ask-arq-{theme}.svg").write_text(architecture(theme))
     (OUT / f"hero-{theme}.svg").write_text(hero(theme))
     (OUT / f"timeline-{theme}.svg").write_text(timeline(theme))
 

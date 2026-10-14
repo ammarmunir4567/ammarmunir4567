@@ -15,30 +15,10 @@ I'm a software engineer who specializes in LLM-based systems. For three years I'
 
 Arq is an AI-powered security and compliance platform for SOC 2, ISO 27001 and HIPAA. I own its backend, frontend, AI pipeline and deployment. Ask Arq is the assistant inside it: an agentic RAG system built on LangGraph that answers with citations.
 
-```mermaid
-flowchart LR
-    Q(["Question"]) --> R{"LLM router"}
-    R --> A["ReAct agent<br/>about 13 tools"]
-    A <--> M[("Mem0<br/>memory")]
-    A --> X["Multi-query<br/>expansion"]
-    subgraph H["Hybrid retrieval, isolated per organization"]
-        D["Dense search"]
-        S["Sparse search"]
-        F["Reciprocal<br/>rank fusion"]
-        C["Cross-encoder<br/>rerank"]
-    end
-    X --> D & S
-    D & S --> F --> C
-    C --> ANS(["Answer with citations"])
-
-    classDef io fill:#2342A6,stroke:#2342A6,color:#FFFFFF
-    classDef step fill:#EEF2FC,stroke:#2342A6,color:#141A33
-    classDef mem fill:#E3F4F3,stroke:#0E7C7B,color:#0B3D3C
-    class Q,ANS io
-    class R,A,X,D,S,F,C step
-    class M mem
-    style H fill:transparent,stroke:#0E7C7B,stroke-dasharray:5 5
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/ask-arq-dark.svg">
+  <img src="assets/ask-arq-light.svg" width="100%" alt="Ask Arq architecture. A question goes to an LLM router, then a ReAct agent with about 13 tools that reads and writes Mem0 persistent memory. The agent expands the question into multiple queries. Hybrid retrieval, isolated per organization, runs dense and sparse search, fuses the results with reciprocal rank fusion and reranks them with a cross-encoder, producing a cited answer.">
+</picture>
 
 Around it I also built:
 
