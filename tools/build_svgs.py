@@ -1,4 +1,4 @@
-"""Generate the animated hero and career timeline SVGs for the GitHub profile README.
+"""Generate the animated hero, Ask Arq architecture and footer band SVGs for the GitHub profile README.
 
 usage:
     python3 -m venv .venv && .venv/bin/pip install fonttools brotli
@@ -274,85 +274,6 @@ def hero(theme):
 </svg>'''
 
 
-# ---------------------------------------------------------------- timeline
-
-def timeline(theme):
-    p = PALETTES[theme]
-    s = Svg()
-    W, x0, x1 = 880, 56, 824
-    months = 48  # Jan 2023 .. Dec 2026
-
-    def mx(i):
-        return x0 + i / months * (x1 - x0)
-
-    roles = [  # start index, end index, company, role, is_ai
-        (0, 6, "Turing", "LLM post-training and RLHF evaluation", True),
-        (6, 11, "FAST-NU", "Teaching assistant", False),
-        (17, 23, "Ginkgo Retail", "Backend, 30% faster APIs", False),
-        (23, 35, "INOVAQO", "Generative AI engineer", True),
-        (35, 45.5, "Arq Tech", "Lead engineer, US remote", True),
-    ]
-    els = []
-    lg_y = 22
-    lx = x0
-    for label, kind in [("LLM and generative AI work", "ai"), ("Software engineering and teaching", "se"),
-                        ("Education", "ed")]:
-        if kind == "ed":
-            els.append(f'<rect x="{lx}" y="{lg_y - 7}" width="18" height="4" rx="2" fill="{p["turq"]}"/>')
-        else:
-            els.append(f'<rect x="{lx}" y="{lg_y - 11}" width="18" height="12" rx="3" '
-                       f'fill="{p["cobalt"] if kind == "ai" else p["mist"]}"/>')
-        els.append(s.text(lx + 26, lg_y, label, "sans", 13, p["muted"]))
-        lx += 26 + advance("sans", label, 13) + 28
-
-    bar_y, bar_h = 104, 24
-    for a, b, company, role, ai in roles:
-        xa, xb = mx(a) + 1.5, mx(b) - 1.5
-        fill = p["cobalt"] if ai else p["mist"]
-        els.append(f'<rect x="{xa:.1f}" y="{bar_y}" width="{xb - xa:.1f}" height="{bar_h}" rx="6" fill="{fill}"/>')
-        if ai:
-            els.append(f'<line x1="{xa:.1f}" y1="{bar_y}" x2="{xa:.1f}" y2="{bar_y - 46}" stroke="{p["rule"]}"/>')
-            els.append(s.text(xa + 8, bar_y - 30, company, "sansb", 15, p["ink"]))
-            els.append(s.text(xa + 8, bar_y - 12, role, "sans", 12.5, p["muted"]))
-        else:
-            els.append(f'<line x1="{xa:.1f}" y1="{bar_y + bar_h}" x2="{xa:.1f}" y2="{bar_y + bar_h + 46}" stroke="{p["rule"]}"/>')
-            els.append(s.text(xa + 8, bar_y + bar_h + 22, company, "sansb", 15, p["ink"]))
-            els.append(s.text(xa + 8, bar_y + bar_h + 40, role, "sans", 12.5, p["muted"]))
-
-    # now marker
-    nx = mx(45.5) - 1.5
-    els.append(f'<circle class="pulse" cx="{nx:.1f}" cy="{bar_y + bar_h / 2}" r="7" fill="none" stroke="{p["saffron"]}" stroke-width="2"/>')
-    els.append(f'<circle cx="{nx:.1f}" cy="{bar_y + bar_h / 2}" r="4.5" fill="{p["saffron"]}"/>')
-    els.append(s.text(nx + 14, bar_y + bar_h / 2 + 4.5, "now", "sansb", 13, p["saffron"]))
-
-    # axis
-    ay = 194
-    els.append(f'<line x1="{x0}" y1="{ay}" x2="{x1}" y2="{ay}" stroke="{p["rule"]}" stroke-width="1.5"/>')
-    for i, yr in enumerate(["2023", "2024", "2025", "2026"]):
-        x = mx(i * 12)
-        els.append(f'<line x1="{x:.1f}" y1="{ay - 5}" x2="{x:.1f}" y2="{ay + 5}" stroke="{p["muted"]}" stroke-width="1.5"/>')
-        els.append(s.text(x + 6, ay + 20, yr, "sansb", 13, p["muted"]))
-
-    # education, running in from 2020
-    ey = 236
-    xe = mx(18)
-    els.append(f'<rect x="{x0 - 40}" y="{ey}" width="{xe - x0 + 40:.1f}" height="5" rx="2.5" fill="url(#edfade)"/>')
-    els.append(s.text(x0, ey + 24, "BS Computer Science, FAST-NU Lahore, 2020 to 2024", "sans", 12.5, p["muted"]))
-
-    H = ey + 36
-    css = (s.fonts_css()
-           + "@keyframes pulse{0%{r:5;opacity:.9}70%,100%{r:13;opacity:0}}"
-           + ".pulse{animation:pulse 2.4s ease-out infinite}"
-           + "@media (prefers-reduced-motion:reduce){*{animation:none!important}}")
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-labelledby="t d">
-<title id="t">Career timeline</title>
-<desc id="d">Turing, LLM post-training and RLHF evaluation, January to June 2023. FAST-NU teaching assistant, July to November 2023. Ginkgo Retail, June to November 2024. INOVAQO, generative AI engineer, December 2024 to November 2025. Arq Tech, lead engineer, December 2025 to now. BS Computer Science at FAST-NU Lahore, 2020 to 2024.</desc>
-<style>{css}</style>
-<defs><linearGradient id="edfade" x1="0" x2="1"><stop offset="0" stop-color="{p["turq"]}" stop-opacity="0"/><stop offset=".12" stop-color="{p["turq"]}"/></linearGradient></defs>
-{"".join(els)}
-</svg>'''
-
-
 # ---------------------------------------------------------------- Ask Arq architecture
 
 def architecture(theme):
@@ -438,7 +359,6 @@ for theme in PALETTES:
     (OUT / f"band-{theme}.svg").write_text(band(theme))
     (OUT / f"ask-arq-{theme}.svg").write_text(architecture(theme))
     (OUT / f"hero-{theme}.svg").write_text(hero(theme))
-    (OUT / f"timeline-{theme}.svg").write_text(timeline(theme))
 
 for f in sorted(OUT.glob("*.svg")):
     print(f.name, f.stat().st_size)
