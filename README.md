@@ -1,6 +1,6 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.svg">
-  <img src="assets/hero-light.svg" width="100%" alt="Ammar Munir, lead engineer at Arq Tech, Lahore. An animated agent trace answers 'what does ammar build?': it routes the question, expands it into sub-queries, runs dense and sparse search scoped to one organization, fuses the results with reciprocal rank fusion, reranks with a cross-encoder, then answers 'Agentic RAG and LLM systems, from prototype to production' with citations to Arq Tech, Turing and INOVAQO.">
+  <img src="assets/hero-light.svg" width="100%" alt="Ammar Munir, lead engineer at Arq Tech, Lahore. An animated agent answers 'what does ammar build?': eight sources flow into a context window that fills to 170 thousand tokens (GitHub, Slack and AWS MCP servers, a policy library, a CVE feed, questionnaires, UI/UX snapshots of web, extension and mobile, and Mem0 memory). The context is distilled from 2,400 chunks to 40 with reciprocal rank fusion and to 12 with a cross-encoder, UI/UX and contradiction checks pass, and it answers 'Agents that take in a lot of messy context, distill it, check their own work and cite every source' with citations to Arq Tech, Turing and INOVAQO.">
 </picture>
 
 <p>
