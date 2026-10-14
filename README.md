@@ -11,23 +11,6 @@
 
 I'm a software engineer who specializes in LLM-based systems. For three years I've taken retrieval-augmented generation, agents and LLM evaluation from prototype to production. I started on post-training data and RLHF-style evaluation at Turing, and I'm now lead engineer on **Arq**, an AI security and compliance platform.
 
-## Ask Arq, the system I lead
-
-Arq is an AI-powered security and compliance platform for SOC 2, ISO 27001 and HIPAA. I own its backend, frontend, AI pipeline and deployment. Ask Arq is the assistant inside it: an agentic RAG system built on LangGraph that answers with citations.
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/ask-arq-dark.svg">
-  <img src="assets/ask-arq-light.svg" width="100%" alt="Ask Arq architecture. A question goes to an LLM router, then a ReAct agent with about 13 tools that reads and writes Mem0 persistent memory. The agent expands the question into multiple queries. Hybrid retrieval, isolated per organization, runs dense and sparse search, fuses the results with reciprocal rank fusion and reranks them with a cross-encoder, producing a cited answer.">
-</picture>
-
-Around it I also built:
-
-- a questionnaire and RFP agent that flags low-confidence answers and writes reviewer corrections back to the knowledge base
-- an LLM contradiction detector for policy documents
-- an integration agent that takes actions in connected apps through MCP
-- threat-intelligence ingestion that matches CVEs to customer findings
-- cloud, code and external security scanning with GRC control mapping, plus the Slack bot, Chrome extension and mobile app
-
 ## Toolbox
 
 | | |
