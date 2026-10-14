@@ -10,6 +10,7 @@ so the type renders inside GitHub's image proxy.
 """
 import base64
 import io
+import json
 import sys
 from pathlib import Path
 
@@ -350,6 +351,112 @@ def hero(theme, variant, T):
 </svg>'''
 
 
+# ---------------------------------------------------------------- toolbox
+
+ICONS = json.loads(Path(__file__).with_name("icons.json").read_text())
+AWS = "#FF9900"
+
+# (group title, accent, [(category, [(tool, simple-icons slug or monogram letters, optional monogram colour)])])
+TOOLBOX = [
+    ("AI systems", "turq", [
+        ("Agents and orchestration", [("LangGraph", "langgraph"), ("LangChain", "langchain"), ("LlamaIndex", "LI"),
+                                      ("MCP", "modelcontextprotocol"), ("Composio", "C"), ("Mem0", "M0")]),
+        ("Retrieval and documents", [("Pinecone", "P"), ("pgvector", "postgresql"), ("Cohere", "C"),
+                                     ("Sentence Transformers", "huggingface"), ("Docling", "D"), ("PyMuPDF", "Mu")]),
+        ("Models and inference", [("OpenAI", "O"), ("Anthropic", "anthropic"), ("Gemini", "googlegemini"), ("Groq", "G"),
+                                  ("LLaMA", "meta"), ("Whisper", "W"), ("Hugging Face", "huggingface"),
+                                  ("PyTorch", "pytorch")]),
+    ]),
+    ("Platform engineering", "cobalt", [
+        ("Backend and data", [("FastAPI", "fastapi"), ("Django", "django"), ("Celery", "celery"), ("RabbitMQ", "rabbitmq"),
+                              ("Redis", "redis"), ("PostgreSQL", "postgresql"), ("SQLAlchemy", "sqlalchemy"),
+                              ("MongoDB", "mongodb"), ("Pydantic", "pydantic")]),
+        ("Frontend and apps", [("React", "react"), ("Next.js", "nextdotjs"), ("Tailwind CSS", "tailwindcss"),
+                               ("shadcn/ui", "shadcnui"), ("TanStack Query", "reactquery"), ("React Native", "react"),
+                               ("Expo", "expo"), ("Chrome extensions", "googlechrome"), ("Tauri", "tauri")]),
+        ("Cloud and DevOps", [("AWS ECS", "ECS", AWS), ("AWS Lambda", "λ", AWS), ("Amazon S3", "S3", AWS),
+                              ("Amazon RDS", "RDS", AWS), ("Terraform", "terraform"), ("Docker", "docker"),
+                              ("GitHub Actions", "githubactions"), ("Vercel", "vercel")]),
+        ("Quality and observability", [("LangSmith", "LS"), ("Sentry", "sentry"), ("CloudWatch", "CW", AWS),
+                                       ("Pytest", "pytest"), ("Playwright", "PW"), ("Vitest", "vitest"), ("Ruff", "ruff")]),
+        ("Languages", [("Python", "python"), ("TypeScript", "typescript"), ("JavaScript", "javascript"),
+                       ("Rust", "rust"), ("C++", "cplusplus")]),
+    ]),
+]
+
+
+def luminance(hex_):
+    def ch(v):
+        v /= 255
+        return v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4
+    r, g, b = (int(hex_[i:i + 2], 16) for i in (1, 3, 5))
+    return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b)
+
+
+def contrast(a, b):
+    la, lb = sorted((luminance(a), luminance(b)), reverse=True)
+    return (la + 0.05) / (lb + 0.05)
+
+
+def toolbox(theme):
+    p = PALETTES[theme]
+    s = Svg()
+    W, PAD = 880, 36
+    label_w = 218
+    cx0, cx1 = PAD + label_w, W - PAD
+    chip_h, gap, icon = 32, 8, 16
+    els = []
+    y = PAD - 4
+    alt = []
+    for g, (title, accent, cats) in enumerate(TOOLBOX):
+        if g:
+            y += 18
+        y += 26
+        els.append(s.text(PAD, y, title, "casual", 25, p["ink"]))
+        els.append(f'<rect x="{PAD + advance("casual", title, 25) + 14:.1f}" y="{y - 8}" '
+                   f'width="{W - PAD - advance("casual", title, 25) - 14 - PAD:.1f}" height="1.5" fill="{p[accent]}" opacity=".55"/>')
+        y += 18
+        for k, (cat, tools) in enumerate(cats):
+            if k:
+                els.append(f'<line x1="{PAD}" y1="{y + 7}" x2="{W - PAD}" y2="{y + 7}" stroke="{p["rule"]}"/>')
+                y += 14
+            top = y
+            els.append(f'<rect x="{PAD}" y="{top + 8}" width="3.5" height="16" rx="1.75" fill="{p[accent]}"/>')
+            els.append(s.text(PAD + 14, top + 21, cat, "sansb", 14, p["ink"]))
+            x, row = cx0, top
+            for tool in tools:
+                name, ref = tool[0], tool[1]
+                tw = advance("sans", name, 13.5)
+                w = 10 + icon + 8 + tw + 12
+                if x + w > cx1:
+                    x, row = cx0, row + chip_h + gap
+                els.append(f'<rect x="{x:.1f}" y="{row}" width="{w:.1f}" height="{chip_h}" rx="9" fill="{p["panel"]}" stroke="{p["rule"]}"/>')
+                ix, iy = x + 10, row + (chip_h - icon) / 2
+                if ref in ICONS:
+                    col = ICONS[ref]["hex"]
+                    if contrast(col, p["panel"]) < 2.2:
+                        col = p["ink"]
+                    els.append(f'<path transform="translate({ix:.1f} {iy:.1f}) scale({icon / 24})" d="{ICONS[ref]["path"]}" fill="{col}"/>')
+                else:
+                    bg = tool[2] if len(tool) > 2 else p[accent]
+                    fg = "#FFFFFF" if contrast("#FFFFFF", bg) >= contrast("#0F1430", bg) else "#0F1430"
+                    fs = {1: 10, 2: 8, 3: 6.2}[len(ref)]
+                    els.append(f'<rect x="{ix:.1f}" y="{iy:.1f}" width="{icon}" height="{icon}" rx="4" fill="{bg}"/>')
+                    els.append(s.text(ix + icon / 2, iy + icon / 2 + fs * 0.36, ref, "monob", fs, fg, anchor="middle"))
+                els.append(s.text(x + 10 + icon + 8, row + chip_h / 2 + 4.6, name, "sans", 13.5, p["ink"]))
+                x += w + gap
+            y = row + chip_h + 8
+            alt.append(f"{cat}: {', '.join(t[0] for t in tools)}.")
+    H = y + PAD - 12
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" role="img" aria-labelledby="t d">
+<title id="t">Toolbox</title>
+<desc id="d">{esc(" ".join(alt))}</desc>
+<style>{s.fonts_css()}</style>
+<rect width="{W}" height="{H}" rx="18" fill="{p["bg"]}"/>
+{"".join(els)}
+</svg>''', " ".join(alt)
+
+
 def band(theme):
     p = PALETTES[theme]
     return (f'<svg xmlns="http://www.w3.org/2000/svg" width="880" height="26" viewBox="0 0 880 26" aria-hidden="true">'
@@ -359,6 +466,8 @@ def band(theme):
 for theme in PALETTES:
     (OUT / f"hero-{theme}.svg").write_text(hero(theme, context_funnel, 18.0))
     (OUT / f"band-{theme}.svg").write_text(band(theme))
+    svg, alt = toolbox(theme)
+    (OUT / f"toolbox-{theme}.svg").write_text(svg)
 
 for f in sorted(OUT.glob("*.svg")):
     print(f.name, f.stat().st_size)
