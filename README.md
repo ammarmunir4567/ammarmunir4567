@@ -1,6 +1,6 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.svg">
-  <img src="assets/hero-light.svg" width="100%" alt="Ammar Munir, lead engineer at Arq Tech, Lahore. An animated agent answers 'what does ammar build?': eight sources flow into a context window that fills to 170 thousand tokens (GitHub, Slack and AWS MCP servers, a policy library, a CVE feed, questionnaires, UI/UX snapshots of web, extension and mobile, and Mem0 memory). The context is distilled from 2,400 chunks to 40 with reciprocal rank fusion and to 12 with a cross-encoder, UI/UX and contradiction checks pass, and it answers 'Agents that take in a lot of messy context, distill it, check their own work and cite every source' with citations to Arq Tech, Turing and INOVAQO.">
+  <img src="assets/hero-light.svg" width="100%" alt="Ammar Munir, lead engineer at Arq Tech, Lahore. I build AI agents, workflows, integrations and RAG that run in production. An animated agent built on the Claude Agent SDK takes the task 'research 3 competitors, update the CRM and draft a pricing brief'. It plans the workflow, runs 3 research subagents in parallel, reads 42 web sources, uses RAG over past deals and sales docs, calls MCP tools for HubSpot, Notion and Slack, recalls account history from Mem0, builds a pricing model in Python and gets human approval in Slack, then delivers a cited pricing brief.">
 </picture>
 
 <p>
@@ -9,7 +9,7 @@
   <a href="https://www.instagram.com/art_of_ammar/"><img src="https://img.shields.io/badge/Sketchbook-art__of__ammar-B86E0A?style=flat-square&logo=instagram&logoColor=white" alt="Instagram sketchbook: art_of_ammar"></a>
 </p>
 
-I'm a software engineer who specializes in LLM-based systems. For three years I've taken retrieval-augmented generation, agents and LLM evaluation from prototype to production. I started on post-training data and RLHF-style evaluation at Turing, and I'm now lead engineer on **Arq**, an AI security and compliance platform.
+I'm a software engineer who builds production GenAI systems: AI agents on LangGraph and the Claude Agent SDK, multi-step workflows with human review, integrations through MCP, and RAG that cites its sources. For three years I've taken these from prototype to production. I started on LLM post-training data and RLHF-style evaluation at Turing, and I'm now lead engineer at Arq Tech.
 
 ## Toolbox
 

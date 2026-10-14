@@ -33,12 +33,12 @@ PALETTES = {
     "light": dict(
         bg="#F5F7FC", panel="#FFFFFF", rule="#D9E0F0", ink="#141A33", muted="#56607F",
         cobalt="#2342A6", turq="#0E7C7B", saffron="#B86E0A", mist="#C3CDE8", band="#2342A6",
-        bandAccent="#0E7C7B", ring="#0E7C7B", peri="#7A8FD9", chip="#F5F7FC",
+        bandAccent="#0E7C7B", ring="#0E7C7B", peri="#7A8FD9", chip="#F5F7FC", hubText="#FFFFFF",
     ),
     "dark": dict(
         bg="#0F1430", panel="#161D42", rule="#2A3466", ink="#E8ECF8", muted="#9AA5CC",
         cobalt="#8FA8FF", turq="#3FD0C9", saffron="#F2B04A", mist="#3A4578", band="#5B7BEA",
-        bandAccent="#3FD0C9", ring="#3FD0C9", peri="#5F74D8", chip="#1B2350",
+        bandAccent="#3FD0C9", ring="#3FD0C9", peri="#5F74D8", chip="#1B2350", hubText="#0F1430",
     ),
 }
 
@@ -126,12 +126,6 @@ class Anim:
         n = self._name("f")
         return self._add(n, f"0%,{self.pct(t)}{{opacity:0}}{self.pct(t + dur)},100%{{opacity:1}}")
 
-    def window(self, t_on, t_off):
-        """Visible only between t_on and t_off (stepped counters)."""
-        n = self._name("w")
-        return self._add(n, f"0%,{self.pct(t_on)}{{opacity:0}}{self.pct(t_on + 0.01)},{self.pct(t_off)}{{opacity:1}}"
-                            f"{self.pct(t_off + 0.01)},100%{{opacity:0}}", "opacity:0;")
-
     def wipe(self, t0, t1, dist, axis="X", steps=None):
         n = self._name("x")
         tf = f"animation-timing-function:steps({steps},end);" if steps else ""
@@ -144,12 +138,6 @@ class Anim:
         return self._add(n, f"0%,{self.pct(t0)}{{stroke-dashoffset:1}}{self.pct(t1)},100%{{stroke-dashoffset:0}}",
                          "stroke-dasharray:1;stroke-dashoffset:0;")
 
-    def sweep(self, t0, t1, dist):
-        """Move right across a span, then vanish (playhead)."""
-        n = self._name("p")
-        return self._add(n, f"0%,{self.pct(t0)}{{transform:translateX(0);opacity:1}}"
-                            f"{self.pct(t1)}{{transform:translateX({dist:.1f}px);opacity:1}}"
-                            f"{self.pct(t1 + 0.3)},100%{{transform:translateX({dist:.1f}px);opacity:0}}", "opacity:0;")
 
 
 def reveal(c, x, y, w, h, t0, t1, axis="X", steps=None):
@@ -168,11 +156,12 @@ class Ctx:
         self.cover = p["panel"]
 
 
-def ask_row(c, x_label, x_val, y, size, t0=0.7, t1=2.0):
+def ask_row(c, x_label, x_val, y, size, t0=0.7, t1=None, label="ask", query="what does ammar build?"):
     s, p, A = c.s, c.p, c.A
-    q = "what does ammar build?"
+    q = query
+    t1 = t1 or t0 + len(q) * 0.028
     qw = advance("mono", q, size)
-    out = [s.text(x_label, y, "ask", "monob", size, p["cobalt"]), s.text(x_val, y, q, "mono", size, p["ink"]),
+    out = [s.text(x_label, y, label, "monob", size, p["cobalt"]), s.text(x_val, y, q, "mono", size, p["ink"]),
            reveal(c, x_val - 1, y - size - 2, qw + 4, size + 9, t0, t1, steps=len(q))]
     hide = A._add("caret", f"0%,{A.pct(t1 + 0.3)}{{opacity:1}}{A.pct(t1 + 0.31)},100%{{opacity:0}}", "opacity:0;")
     A.kfs.append("@keyframes bl{0%,49%{opacity:1}50%,100%{opacity:0}}")
@@ -190,115 +179,116 @@ def stream(c, x, y, parts, size, t0, speed=420):
     return c.s.spans(x, y, parts, "mono", size) + reveal(c, x - 2, y - size - 3, lw, size + 10, t0, t1), t1
 
 
-def sources_line(c, x, y, t):
+# ---------------------------------------------------------------- shared node helpers
+
+def box(c, x, y, w, h, title, sub, tfont="sansb", tsize=13.5, sfont="mono", ssize=11.5, sub_cls=None, dim=False):
     s, p = c.s, c.p
-    parts = []
-    for ref, name in (("[1]", "Arq Tech, lead engineer   "), ("[2]", "Turing, RLHF   "),
-                      ("[3]", "INOVAQO, generative AI")):
-        parts += [(ref + " ", p["saffron"], "monob"), (name, p["muted"], None)]
-    return f'<g class="{c.A.fade_in(t)}">' + s.spans(x, y, parts, "mono", 12.5) + "</g>"
+    dash = ' stroke-dasharray="4 4"' if dim else ""
+    op = ' opacity=".45"' if dim else ""
+    sc = f' class="{sub_cls}"' if sub_cls else ""
+    return (f'<g{op}><rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h}" rx="10" fill="{p["chip"]}" stroke="{p["rule"]}"{dash}/>'
+            + s.text(x + 13, y + h / 2 - 3, title, tfont, tsize, p["ink"])
+            + f"<g{sc}>" + s.text(x + 13, y + h / 2 + 14, sub, sfont, ssize, p["muted"]) + "</g></g>")
 
 
-# ---------------------------------------------------------------- hero panel: context funnel
+def light_up(c, x, y, w, h, t):
+    """Accent outline and a done dot that appear when a node finishes."""
+    p, A = c.p, c.A
+    return (f'<g class="{A.fade_in(t, 0.2)}"><rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h}" rx="10" fill="none" '
+            f'stroke="{p["turq"]}" stroke-width="1.8"/><circle cx="{x + w - 12:.1f}" cy="{y + 12:.1f}" r="3.5" fill="{p["turq"]}"/></g>')
 
-def context_funnel(c):
+
+def edge(c, d, t=None, dashed=False, arrow=True):
+    """Static faint edge, plus an accent copy that draws itself at time t."""
+    p, A = c.p, c.A
+    mk = ' marker-end="url(#ah)"' if arrow else ""
+    da = ' stroke-dasharray="4 4"' if dashed else ""
+    out = f'<path d="{d}" fill="none" stroke="{p["rule"]}" stroke-width="1.5"{da}{mk}/>'
+    if t is not None:
+        out += (f'<path class="{A.draw(t, t + 0.35)}" pathLength="1" d="{d}" fill="none" stroke="{p["turq"]}" '
+                f'stroke-width="2"/>')
+    return out
+
+
+def result_block(c, x0, y, lines, stats, t, size=14.5):
+    s, p, A = c.s, c.p, c.A
+    out = [s.text(x0, y, "result", "monob", size, p["turq"], f'class="{A.fade_in(t)}"')]
+    vx = x0 + 76
+    ta = t + 0.2
+    for j, txt in enumerate(lines):
+        svg, ta = stream(c, vx, y + j * 27, [(txt, p["ink"], None)], size, ta)
+        out.append(svg)
+    sy = y + 27 * len(lines) + 4
+    out.append(s.text(vx, sy, stats, "mono", 12.5, p["muted"], f'class="{A.fade_in(ta + 0.2)}"'))
+    return out, sy
+
+
+# ---------------------------------------------------------------- hero panel: agent hub
+
+def hub_panel(c):
     s, p, A, px, py, pw = c.s, c.p, c.A, c.px, c.py, c.pw
-    x0 = px + 28
-    right = px + pw - 28
+    x0, right = px + 28, px + pw - 28
     size = 14.5
     row_y = py + 42
-    out = ask_row(c, x0, x0 + 56, row_y, size)
-
-    sources = [  # name, detail, kind colour, k tokens
-        ("GitHub MCP", "38 repos", p["turq"], 22),
-        ("Slack MCP", "1.2k threads", p["turq"], 14),
-        ("AWS MCP", "640 resources", p["turq"], 18),
-        ("Policy library", "212 documents", p["peri"], 48),
-        ("CVE feed", "9.8k advisories", p["saffron"], 30),
-        ("Questionnaires", "40 RFPs", p["peri"], 20),
-        ("UI/UX snapshots", "web, ext, mobile", p["cobalt"], 12),
-        ("Mem0 memory", "14 recalls", p["cobalt"], 6),
-    ]
-    top = row_y + 52
-    chip_w, chip_h, gap = 292, 28, 8
-    col_h = len(sources) * (chip_h + gap) - gap
-    gx, gw = x0 + chip_w + 74, 54
-    cap = 200
-    head = top - 14
-    out.append(f'<g class="{A.fade_in(2.2)}">'
-               + s.text(x0, head, "Sources", "sansb", 12.5, p["muted"])
-               + s.text(gx + gw / 2, head, "Context window", "sansb", 12.5, p["muted"], anchor="middle")
-               + s.text(right, head, "Distilled", "sansb", 12.5, p["muted"], anchor="end") + "</g>")
-    out.append(f'<rect x="{gx}" y="{top}" width="{gw}" height="{col_h}" rx="10" fill="{p["chip"]}" stroke="{p["rule"]}"/>')
-
-    filled, t = 0, 2.4
-    times = []
+    out = ask_row(c, x0, x0 + 56, row_y, size, query="research 3 competitors, update the CRM and draft a pricing brief")
     c.cover = p["chip"]
-    for i, (name, detail, col, tok) in enumerate(sources):
-        y = top + i * (chip_h + gap)
-        cy = y + chip_h / 2
-        out.append(f'<g class="{A.fade_in(t)}">'
-                   f'<rect x="{x0}" y="{y}" width="{chip_w}" height="{chip_h}" rx="8" fill="{p["chip"]}" stroke="{p["rule"]}"/>'
-                   f'<circle cx="{x0 + 14}" cy="{cy}" r="4" fill="{col}"/>'
-                   + s.text(x0 + 26, cy + 4.5, name, "sansb", 12.5, p["ink"])
-                   + s.text(x0 + chip_w - 12, cy + 4, detail, "mono", 11.5, p["muted"], anchor="end") + "</g>")
-        # flow line into the gauge
-        seg_h = tok / cap * col_h
-        tgt_y = top + col_h - (filled + tok / 2) / cap * col_h
-        d = f"M{x0 + chip_w + 2} {cy}C{x0 + chip_w + 40} {cy} {gx - 36} {tgt_y:.1f} {gx - 2} {tgt_y:.1f}"
-        out.append(f'<path class="{A.draw(t + 0.1, t + 0.45)}" pathLength="1" d="{d}" fill="none" stroke="{col}" '
-                   f'stroke-width="1.4" opacity=".7"/>')
-        sy = top + col_h - (filled + tok) / cap * col_h
-        out.append(f'<rect x="{gx + 4}" y="{sy:.1f}" width="{gw - 8}" height="{seg_h - 1.5:.1f}" rx="3" fill="{col}"/>'
-                   + reveal(c, gx + 3, sy - 0.5, gw - 6, seg_h + 0.5, t + 0.4, t + 0.7, axis="Y"))
-        filled += tok
-        times.append((t + 0.55, filled))
-        t += 0.38
-    c.cover = p["panel"]
-    for k, (tt, tot) in enumerate(times):
-        last = k == len(times) - 1
-        cls = A.fade_in(tt, 0.01) if last else A.window(tt, times[k + 1][0])
-        out.append(s.text(gx + gw / 2, top + col_h + 22, f"{tot}k tokens", "monob", 12.5, p["ink"], f'class="{cls}"',
-                          anchor="middle"))
 
-    # distillation stages
-    dx0 = gx + gw + 56
-    dw = right - dx0
-    stages = [("2,400 chunks", "hybrid retrieval, one org only"), ("40", "reciprocal rank fusion"),
-              ("12", "cross-encoder rerank"), ("✓ checks pass", "UI/UX and contradiction checks")]
-    sh, sg = 56, (col_h - 4 * 56) / 3
-    t += 0.3
-    for i, (big, small) in enumerate(stages):
-        y = top + i * (sh + sg)
-        g = (f'<rect x="{dx0}" y="{y:.1f}" width="{dw}" height="{sh}" rx="10" fill="{p["chip"]}" stroke="{p["rule"]}"/>'
-             + s.text(dx0 + 14, y + 25, big, "sansb", 17, p["ink"])
-             + s.text(dx0 + 14, y + 44, small, "sans", 12, p["muted"]))
-        if i == 0:
-            g += f'<path d="M{gx + gw + 4} {y + sh / 2:.1f}H{dx0 - 6}" stroke="{p["muted"]}" stroke-width="1.4" marker-end="url(#ah)"/>'
-        else:
-            g += f'<path d="M{dx0 + 30} {y - sg + 2:.1f}V{y - 5:.1f}" stroke="{p["muted"]}" stroke-width="1.4" marker-end="url(#ah)"/>'
-        out.append(f'<g class="{A.fade_in(t)}">{g}</g>')
-        t += 0.45
+    gt = row_y + 30
+    nw, nh = 200, 52
+    rows = [gt, gt + 84, gt + 168]
+    lx, rx = x0, right - nw
+    hcx = px + pw / 2
+    hw, hh = 176, 66
+    hcy = rows[1] + nh / 2
+    hl, hr, ht, hb = hcx - hw / 2, hcx + hw / 2, hcy - hh / 2, hcy + hh / 2
 
-    ans_y = top + col_h + 66
-    out.append(s.text(x0, ans_y, "answer", "monob", size, p["turq"], f'class="{A.fade_in(t)}"'))
-    vx = x0 + 76
-    lines = [
-        [("Agents that take in a lot of messy context, distill it, check", p["ink"], None)],
-        [("their own work and cite every source ", p["ink"], None), ("[1][2][3]", p["saffron"], "monob")],
+    nodes = [  # title, result, x, y, side
+        ("Workflow", "plan → research → draft", hcx - nw / 2, rows[0], "top"),
+        ("Subagents", "3 researchers, parallel", lx, rows[0], "left"),
+        ("Web search", "42 sources read", lx, rows[1], "left"),
+        ("MCP tools", "hubspot, notion, slack", rx, rows[0], "right"),
+        ("RAG", "past deals + sales docs", lx, rows[2], "left"),
+        ("Memory", "account history, Mem0", rx, rows[1], "right"),
+        ("Code", "pricing model in Python", rx, rows[2], "right"),
+        ("Human review", "approved in Slack", hcx - nw / 2, rows[2], "bottom"),
     ]
-    ta = t + 0.2
-    for j, parts in enumerate(lines):
-        svg, ta = stream(c, vx, ans_y + j * 27, parts, size, ta)
-        out.append(svg)
-    src_y = ans_y + 27 * len(lines) + 6
-    out.append(sources_line(c, vx, src_y, ta + 0.2))
-    desc = ("An animated funnel answers what does ammar build. Eight sources flow into a context window that fills to "
-            "170 thousand tokens: GitHub, Slack and AWS MCP servers, a policy library, a CVE feed, questionnaires, "
-            "UI/UX snapshots of web, extension and mobile, and Mem0 memory. The context is distilled from 2,400 chunks "
-            "to 40 with reciprocal rank fusion and 12 with a cross-encoder, UI/UX and contradiction checks pass, and "
-            "the answer cites its sources.")
-    return out, src_y + 26 - py, desc
+    t = 2.5
+    edges, boxes = [], []
+    for title, res, x, y, side in nodes:
+        ncy = y + nh / 2
+        if side == "left":
+            d = f"M{hl - 2:.1f} {hcy + (ncy - hcy) * 0.3:.1f}L{x + nw + 4:.1f} {ncy:.1f}"
+        elif side == "right":
+            d = f"M{hr + 2:.1f} {hcy + (ncy - hcy) * 0.3:.1f}L{x - 4:.1f} {ncy:.1f}"
+        elif side == "top":
+            d = f"M{hcx:.1f} {ht - 2:.1f}L{hcx:.1f} {y + nh + 4:.1f}"
+        else:
+            d = f"M{hcx:.1f} {hb + 2:.1f}L{hcx:.1f} {y - 4:.1f}"
+        edges.append(edge(c, d, t))
+        boxes.append(box(c, x, y, nw, nh, title, res, sub_cls=A.fade_in(t + 0.35)) + light_up(c, x, y, nw, nh, t + 0.3))
+        t += 0.6
+    out += edges + boxes
+
+    # the agent itself
+    A.kfs.append("@keyframes hp{0%,100%{opacity:.15}50%{opacity:.7}}")
+    A.rules.append(".hp{animation:hp 1.6s ease-in-out infinite}")
+    out.append(f'<rect class="hp" x="{hl - 5:.1f}" y="{ht - 5:.1f}" width="{hw + 10}" height="{hh + 10}" rx="17" fill="none" '
+               f'stroke="{p["cobalt"]}" stroke-width="1.5"/>')
+    out.append(f'<rect x="{hl:.1f}" y="{ht:.1f}" width="{hw}" height="{hh}" rx="14" fill="{p["cobalt"]}"/>')
+    out.append(s.text(hcx, hcy - 2, "Agent", "sansb", 16, p["hubText"], anchor="middle"))
+    out.append(s.text(hcx, hcy + 17, "Claude Agent SDK", "mono", 11.5, p["hubText"], anchor="middle"))
+
+    c.cover = p["panel"]
+    blk, sy = result_block(c, x0, rows[2] + nh + 44,
+                           ["Pricing brief drafted from 42 cited sources, 3 CRM deals",
+                            "updated, summary posted to Slack after one approval."],
+                           "3 subagents, 57 tool calls, hooks on every write", t + 0.2)
+    out += blk
+    desc = ("An animated agent built on the Claude Agent SDK takes the task research 3 competitors, update the CRM "
+            "and draft a pricing brief. It plans the workflow, runs 3 research subagents in parallel, reads 42 web "
+            "sources, uses RAG over past deals and sales docs, calls MCP tools for HubSpot, Notion and Slack, recalls "
+            "account history from Mem0 memory, builds a pricing model in Python and gets human approval in Slack.")
+    return out, sy + 26 - py, desc
 
 
 # ---------------------------------------------------------------- shared hero frame
@@ -323,7 +313,8 @@ def hero(theme, variant, T):
     els.append(s.text(PAD, name_y, "Ammar Munir", "casual", 62, p["ink"], 'letter-spacing="-0.5"'))
     els.append(s.text(W - PAD, name_y - 26, "Lead engineer at Arq Tech", "sansb", 15.5, p["ink"], anchor="end"))
     els.append(s.text(W - PAD, name_y - 4, "Lahore, Pakistan", "sans", 15.5, p["muted"], anchor="end"))
-    tagline = "I build agentic RAG and LLM systems that answer with their sources."
+    tagline = "I build AI agents, workflows, integrations and RAG that run in production."
+    assert advance("sans", tagline, 20) < W - 2 * PAD
     ty = name_y + 40
     els.append(s.text(PAD, ty, tagline, "sans", 20, p["muted"]))
     px, py, pw = PAD, ty + 33, W - 2 * PAD
@@ -359,7 +350,7 @@ AWS = "#FF9900"
 # (group title, accent, [(category, [(tool, simple-icons slug or monogram letters, optional monogram colour)])])
 TOOLBOX = [
     ("AI systems", "turq", [
-        ("Agents and orchestration", [("LangGraph", "langgraph"), ("LangChain", "langchain"), ("LlamaIndex", "LI"),
+        ("Agents and orchestration", [("Claude Agent SDK", "claude"), ("LangGraph", "langgraph"), ("LangChain", "langchain"), ("LlamaIndex", "LI"),
                                       ("MCP", "modelcontextprotocol"), ("Composio", "C"), ("Mem0", "M0")]),
         ("Retrieval and documents", [("Pinecone", "P"), ("pgvector", "postgresql"), ("Cohere", "C"),
                                      ("Sentence Transformers", "huggingface"), ("Docling", "D"), ("PyMuPDF", "Mu")]),
@@ -464,7 +455,7 @@ def band(theme):
 
 
 for theme in PALETTES:
-    (OUT / f"hero-{theme}.svg").write_text(hero(theme, context_funnel, 18.0))
+    (OUT / f"hero-{theme}.svg").write_text(hero(theme, hub_panel, 18.0))
     (OUT / f"band-{theme}.svg").write_text(band(theme))
     svg, alt = toolbox(theme)
     (OUT / f"toolbox-{theme}.svg").write_text(svg)
